@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>✨ Quản lý Prompt Nâng Cao</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366f1',
+            secondary: '#8b5cf6',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * { font-family: 'Inter', sans-serif; }
+    
+    .mic-button {
+      transition: all 0.3s ease;
+      padding: 0.5rem;
+      border-radius: 50%;
+      position: relative;
+    }
+    .mic-button.recording {
+      background-color: #ef4444;
+      color: white;
+      animation: pulse 1.5s infinite;
+    }
+    .mic-button:hover { transform: scale(1.1); }
+    
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      50% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .toast {
+      animation: slideIn 0.3s ease;
+      max-width: 350px;
+    }
+    
+    .prompt-card {
+      transition: all 0.2s ease;
+      border-left: 4px solid transparent;
+    }
+    .prompt-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      border-left-color: #6366f1;
+    }
+    
+    .category-badge {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    /* Dark mode adjustments */
+    .dark .prompt-card { @apply bg-gray-800 border-gray-700; }
+    .dark input, .dark select, .dark textarea {
+      @apply bg-gray-700 border-gray-600 text-white placeholder-gray-400;
+    }
+    .dark .prompt-card:hover { @apply shadow-gray-900/50; }
+    
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 0.375rem;
+    }
+    .dark .skeleton {
+      background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+    }
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    /* Modal transitions */
+    .modal {
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .modal.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .modal:not(.hidden) {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 min-h-screen p-4 transition-colors duration-300">
+  
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-6 mb-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            📚 Quản lý Prompt Cá Nhân
+          </h1>
+          <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Lưu trữ, tổ chức và sử dụng prompt hiệu quả</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="themeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Chuyển chế độ sáng/tối">
+            <i class="fas fa-moon dark:hidden"></i>
+            <i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
+          </button>
+          <div class="text-sm text-gray-500 dark:text-gray-400">
+            <span id="promptCount">0</span> prompt
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-6">
+      
+      <!-- Add/Edit Form -->
+      <section class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <i class="fas fa-plus-circle text-primary"></i>
+          <span id="formTitle">Thêm Prompt Mới</span>
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <!-- Title Input -->
+          <div class="relative">
+            <input id="title" type="text" placeholder="Tiêu đề prompt *" 
+              class="w-full border border-gray-300 dark:border-gray-600 rounded-xl p-3 pr-10 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+              onkeypress="if(event.key==='Enter')addPrompt()">
+            <button id="mic-title" class="mic-button absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary" title="Nhập bằng giọng nói">
+              <i class="fas fa-microphone"></i>
+            </button>
+          </div>
+          
+          <!-- Content Input -->
+          <div class="md:col-span-2 relative">
+            <input id="content" type="text" placeholder="Nội dung prompt hoặc URL *" 
+              class="w-full border border-gray-300 dark:border-gray-600 rounded-xl p-3 pr-10 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+              onkeypress="if(event.key==='Enter')addPrompt()">
+            <button id="mic-content" class="mic-button absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary" title="Nhập bằng giọng nói">
+              <i class="fas fa-microphone"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <!-- Category Input -->
+          <div class="relative">
+            <input id="category" type="text" placeholder="Danh mục (VD: Toán, AI, Viết...) *" 
+              class="w-full border border-gray-300 dark:border-gray-600 rounded-xl p-3 pr-10 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+              list="categorySuggestions" onkeypress="if(event.key==='Enter')addPrompt()">
+            <datalist id="categorySuggestions"></datalist>
+            <button id="mic-category" class="mic-button absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary" title="Nhập bằng giọng nói">
+              <i class="fas fa-microphone"></i>
+            </button>
+          </div>
+          
+          <!-- Tags Input -->
+          <div class="md:col-span-2">
+            <input id="tags" type="text" placeholder="Tags (phân cách bằng dấu phẩy)" 
+              class="w-full border border-gray-300 dark:border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition">
+          </div>
+        </div>
+        
+        <!-- URL Preview -->
+        <div id="urlPreview" class="hidden mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-800">
+          <div class="flex items-start gap-3">
+            <i class="fas fa-link text-blue-500 mt-1"></i>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-blue-800 dark:text-blue-200 truncate" id="previewUrl"></p>
+              <p class="text-xs text-blue-600 dark:text-blue-300" id="previewTitle">Đang tải...</p>
+            </div>
+            <button onclick="openUrlPreview()" class="text-blue-500 hover:text-blue-700">
+              <i class="fas fa-external-link-alt"></i>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-2">
+          <button onclick="addPrompt()" class="bg-gradient-to-r from-primary to-secondary hover:from-indigo-600 hover:to-purple-600 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition transform hover:scale-105">
+            <i class="fas fa-save"></i>
+            <span id="actionBtnText">Lưu Prompt</span>
+          </button>
+          <button onclick="cancelEdit()" id="cancelBtn" class="hidden bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-5 py-2.5 rounded-xl font-medium transition">
+            <i class="fas fa-times"></i> Hủy
+          </button>
+          <div class="flex-1"></div>
+          <button onclick="exportPrompts()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 transition">
+            <i class="fas fa-download"></i> Xuất JSON
+          </button>
+          <input type="file" id="importFile" class="hidden" accept=".json" onchange="importPrompts(event)" />
+          <button onclick="document.getElementById('importFile').click()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 transition">
+            <i class="fas fa-upload"></i> Nhập JSON
+          </button>
+        </div>
+      </section>
+
+      <!-- Filters & Search -->
+      <section class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex flex-col md:flex-row gap-4">
+          <!-- Search -->
+          <div class="flex-1 relative">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input id="search" type="text" placeholder="🔍 Tìm kiếm theo tiêu đề, nội dung, tags..." 
+              class="w-full border border-gray-300 dark:border-gray-600 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition">
+          </div>
+          
+          <!-- View Mode -->
+          <select id="viewMode" onchange="app.render()" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary outline-none">
+            <option value="grouped">📁 Theo danh mục</option>
+            <option value="all">📋 Tất cả prompt</option>
+            <option value="grid">⊞ Chế độ lưới</option>
+          </select>
+          
+          <!-- Category Filter -->
+          <select id="categoryFilter" onchange="app.render()" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary outline-none">
+            <option value="all">🗂️ Tất cả danh mục</option>
+          </select>
+          
+          <!-- Sort -->
+          <select id="sortBy" onchange="app.render()" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary outline-none">
+            <option value="newest">🕐 Mới nhất</option>
+            <option value="oldest">🕑 Cũ nhất</option>
+            <option value="az">🔤 A-Z</option>
+            <option value="za">🔤 Z-A</option>
+          </select>
+        </div>
+        
+        <!-- Bulk Actions -->
+        <div id="bulkActions" class="hidden mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl border border-indigo-200 dark:border-indigo-800">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+              <span id="selectedCount">0</span> đã chọn
+            </span>
+            <button onclick="app.copySelected()" class="text-sm bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition">
+              <i class="fas fa-copy"></i> Sao chép
+            </button>
+            <button onclick="app.deleteSelected()" class="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">
+              <i class="fas fa-trash"></i> Xoá đã chọn
+            </button>
+            <button onclick="app.clearSelection()" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition">
+              <i class="fas fa-times"></i> Bỏ chọn
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Voice Status -->
+      <div id="voice-status" class="text-center text-sm text-gray-500 dark:text-gray-400 mb-4 min-h-[1.5rem]"></div>
+
+      <!-- Prompt List -->
+      <div id="promptList" class="space-y-4"></div>
+      
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden text-center py-12">
+        <i class="fas fa-inbox text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+        <p class="text-gray-500 dark:text-gray-400 text-lg">Chưa có prompt nào</p>
+        <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Hãy thêm prompt đầu tiên của bạn!</p>
+      </div>
+      
+      <!-- Pagination -->
+      <div id="pagination" class="mt-6 flex justify-center gap-2 flex-wrap"></div>
+    </div>
+    
+    <!-- Footer Stats -->
+    <footer class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+      <p>Dữ liệu được lưu tự động trong trình duyệt • <button onclick="app.clearAllData()" class="text-red-500 hover:underline">Xoá toàn bộ</button></p>
+    </footer>
+  </div>
+
+  <!-- Preview Modal -->
+  <div id="previewModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="font-semibold text-lg dark:text-white">Xem trước URL</h3>
+        <button onclick="closeModal('previewModal')" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+          <i class="fas fa-times text-gray-500"></i>
+        </button>
+      </div>
+      <div class="p-4 overflow-y-auto max-h-[70vh]" id="modalContent">
+        <div class="skeleton h-32 rounded-xl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="confirmModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <h3 class="font-semibold text-lg dark:text-white mb-2" id="confirmTitle">Xác nhận</h3>
+      <p class="text-gray-600 dark:text-gray-300 mb-6" id="confirmMessage"></p>
+      <div class="flex gap-3 justify-end">
+        <button onclick="closeModal('confirmModal')" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-xl transition">
+          Hủy
+        </button>
+        <button id="confirmAction" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition">
+          Xác nhận
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * 🎯 Prompt Manager Application - Version 2.0
+     * Features: Dark mode, Bulk actions, Debounced search, Toast notifications,
+     *           URL preview, Keyboard shortcuts, Data validation, Export/Import
+     */
+    class PromptManager {
+      constructor() {
+        this.prompts = [];
+        this.editingIndex = -1;
+        this.itemsPerPage = 6;
+        this.currentPage = 1;
+        this.selectedPrompts = new Set();
+        this.searchDebounce = null;
+        this.recognition = null;
+        this.isRecording = false;
+        this.currentMicTarget = null;
+        
+        this.init();
+      }
+      
+      init() {
+        this.loadFromStorage();
+        this.setupEventListeners();
+        this.setupSpeechRecognition();
+        this.setupKeyboardShortcuts();
+        this.render();
+        this.updateCategorySuggestions();
+        
+        // Auto-save every 30 seconds
+        setInterval(() => this.saveToStorage(), 30000);
+      }
+      
+      // ===== STORAGE =====
+      loadFromStorage() {
+        try {
+          const data = localStorage.getItem('prompts_v2');
+          const settings = localStorage.getItem('prompts_settings');
+          
+          if (data) {
+            this.prompts = JSON.parse(data);
+            // Migrate old format
+            this.prompts = this.prompts.map(p => ({
+              id: p.id || this.generateId(),
+              title: p.title,
+              content: p.content,
+              category: p.category,
+              url: p.url || null,
+              tags: p.tags || [],
+              createdAt: p.createdAt || Date.now(),
+              updatedAt: p.updatedAt || Date.now(),
+              usageCount: p.usageCount || 0
+            }));
+          }
+          
+          if (settings) {
+            const s = JSON.parse(settings);
+            if (s.darkMode) document.documentElement.classList.add('dark');
+            if (s.viewMode) document.getElementById('viewMode').value = s.viewMode;
+          }
+        } catch (e) {
+          console.error('Lỗi tải dữ liệu:', e);
+          this.showToast('⚠️ Không thể tải dữ liệu cũ', 'warning');
+        }
+      }
+      
+      saveToStorage() {
+        try {
+          localStorage.setItem('prompts_v2', JSON.stringify(this.prompts));
+          localStorage.setItem('prompts_settings', JSON.stringify({
+            darkMode: document.documentElement.classList.contains('dark'),
+            viewMode: document.getElementById('viewMode').value
+          }));
+          this.updateStats();
+        } catch (e) {
+          console.error('Lỗi lưu dữ liệu:', e);
+          if (e.name === 'QuotaExceededError') {
+            this.showToast('💾 Bộ nhớ đầy! Hãy xoá bớt prompt.', 'error');
+          }
+        }
+      }
+      
+      generateId() {
+        return 'p_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+      }
+      
+      // ===== EVENT LISTENERS =====
+      setupEventListeners() {
+        // Search with debounce
+        document.getElementById('search').addEventListener('input', (e) => {
+          clearTimeout(this.searchDebounce);
+          this.searchDebounce = setTimeout(() => {
+            this.currentPage = 1;
+            this.render();
+          }, 300);
+        });
+        
+        // Theme toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+          document.documentElement.classList.toggle('dark');
+          this.saveToStorage();
+          this.showToast(document.documentElement.classList.contains('dark') ? '🌙 Chế độ tối' : '☀️ Chế độ sáng', 'info');
+        });
+        
+        // URL preview on content change
+        document.getElementById('content').addEventListener('input', (e) => {
+          const url = e.target.value.trim();
+          const preview = document.getElementById('urlPreview');
+          if (this.isValidUrl(url)) {
+            preview.classList.remove('hidden');
+            document.getElementById('previewUrl').textContent = url;
+            this.fetchUrlPreview(url);
+          } else {
+            preview.classList.add('hidden');
+          }
+        });
+        
+        // Mic buttons
+        ['title', 'content', 'category'].forEach(field => {
+          document.getElementById(`mic-${field}`).addEventListener('click', () => {
+            this.toggleMic(`mic-${field}`);
+          });
+        });
+      }
+      
+      setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+          // Ctrl/Cmd + K: Focus search
+          if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('search').focus();
+          }
+          // Ctrl/Cmd + N: New prompt
+          if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            e.preventDefault();
+            document.getElementById('title').focus();
+          }
+          // Escape: Cancel edit / Close modal
+          if (e.key === 'Escape') {
+            if (this.editingIndex >= 0) {
+              this.cancelEdit();
+            } else {
+              document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
+            }
+          }
+          // Delete: Remove selected
+          if (e.key === 'Delete' && this.selectedPrompts.size > 0) {
+            e.preventDefault();
+            this.deleteSelected();
+          }
+        });
+      }
+      
+      // ===== SPEECH RECOGNITION =====
+      setupSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const statusEl = document.getElementById('voice-status');
+        
+        if (!SpeechRecognition) {
+          statusEl.textContent = '⚠️ Trình duyệt không hỗ trợ nhận diện giọng nói';
+          document.querySelectorAll('.mic-button').forEach(btn => {
+            btn.disabled = true;
+            btn.title = 'Không hỗ trợ';
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+          });
+          return;
+        }
+        
+        this.recognition = new SpeechRecognition();
+        this.recognition.lang = 'vi-VN';
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
+        
+        this.recognition.onstart = () => {
+          this.isRecording = true;
+          this.currentMicTarget?.classList.add('recording');
+          statusEl.innerHTML = '<i class="fas fa-circle text-red-500 animate-pulse"></i> Đang nghe...';
+        };
+        
+        this.recognition.onend = () => {
+          this.isRecording = false;
+          this.currentMicTarget?.classList.remove('recording');
+          if (statusEl.textContent.includes('Đang nghe')) {
+            statusEl.textContent = '';
+          }
+        };
+        
+        this.recognition.onerror = (event) => {
+          this.isRecording = false;
+          this.currentMicTarget?.classList.remove('recording');
+          
+          const errors = {
+            'no-speech': '🎤 Không nghe thấy giọng nói',
+            'audio-capture': '🔇 Không tìm thấy microphone',
+            'not-allowed': '🚫 Vui lòng cấp quyền microphone',
+            'network': '🌐 Lỗi kết nối mạng'
+          };
+          statusEl.textContent = errors[event.error] || `❌ ${event.error}`;
+          this.showToast(statusEl.textContent, 'error');
+        };
+        
+        this.recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript.trim();
+          const field = this.currentMicTarget?.id.replace('mic-', '');
+          
+          if (field && document.getElementById(field)) {
+            document.getElementById(field).value = transcript;
+            document.getElementById(field).dispatchEvent(new Event('input'));
+          }
+          
+          statusEl.textContent = `✅ "${transcript}"`;
+          this.showToast('🎙️ Đã nhập bằng giọng nói', 'success');
+          
+          setTimeout(() => { if (statusEl.textContent.startsWith('✅')) statusEl.textContent = ''; }, 3000);
+        };
+      }
+      
+      toggleMic(targetId) {
+        if (!this.recognition) return;
+        
+        this.currentMicTarget = document.getElementById(targetId);
+        
+        if (this.isRecording) {
+          this.recognition.stop();
+        } else {
+          // Request microphone permission
+          navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(() => this.recognition.start())
+            .catch(() => {
+              this.showToast('🚫 Cần cấp quyền microphone', 'error');
+              this.currentMicTarget?.classList.remove('recording');
+            });
+        }
+      }
+      
+      // ===== CORE FUNCTIONS =====
+      isValidUrl(string) {
+        try {
+          const url = new URL(string);
+          return ['http:', 'https:'].includes(url.protocol);
+        } catch {
+          return false;
+        }
+      }
+      
+      async fetchUrlPreview(url) {
+        const previewTitle = document.getElementById('previewTitle');
+        previewTitle.textContent = 'Đang tải...';
+        
+        try {
+          // Using a simple preview service (in production, use your own backend)
+          const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+          const data = await response.json();
+          
+          if (data.contents) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data.contents, 'text/html');
+            const title = doc.querySelector('title')?.textContent || url;
+            previewTitle.textContent = title.substring(0, 100) + (title.length > 100 ? '...' : '');
+          }
+        } catch {
+          previewTitle.textContent = 'Không thể tải preview';
+        }
+      }
+      
+      openUrlPreview() {
+        const url = document.getElementById('content').value.trim();
+        if (this.isValidUrl(url)) {
+          window.open(url, '_blank');
+        }
+      }
+      
+      addPrompt() {
+        const title = document.getElementById('title').value.trim();
+        const content = document.getElementById('content').value.trim();
+        const category = document.getElementById('category').value.trim();
+        const tags = document.getElementById('tags').value.split(',').map(t => t.trim()).filter(Boolean);
+        
+        // Validation
+        if (!title || !content || !category) {
+          this.showToast('❌ Vui lòng điền đầy đủ thông tin', 'error');
+          // Highlight empty fields
+          ['title', 'content', 'category'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el.value.trim()) {
+              el.classList.add('ring-2', 'ring-red-500');
+              setTimeout(() => el.classList.remove('ring-2', 'ring-red-500'), 2000);
+            }
+          });
+          return;
+        }
+        
+        const promptData = {
+          id: this.editingIndex >= 0 ? this.prompts[this.editingIndex].id : this.generateId(),
+          title,
+          content,
+          category,
+          url: this.isValidUrl(content) ? content : null,
+          tags,
+          createdAt: this.editingIndex >= 0 ? this.prompts[this.editingIndex].createdAt : Date.now(),
+          updatedAt: Date.now(),
+          usageCount: this.editingIndex >= 0 ? this.prompts[this.editingIndex].usageCount : 0
+        };
+        
+        if (this.editingIndex >= 0) {
+          this.prompts[this.editingIndex] = promptData;
+          this.editingIndex = -1;
+          this.showToast('✅ Đã cập nhật prompt', 'success');
+        } else {
+          this.prompts.unshift(promptData);
+          this.showToast('✅ Đã thêm prompt mới', 'success');
+        }
+        
+        this.resetForm();
+        this.saveToStorage();
+        this.render();
+        this.updateCategorySuggestions();
+      }
+      
+      resetForm() {
+        document.getElementById('title').value = '';
+        document.getElementById('content').value = '';
+        document.getElementById('category').value = '';
+        document.getElementById('tags').value = '';
+        document.getElementById('urlPreview').classList.add('hidden');
+        document.getElementById('formTitle').textContent = 'Thêm Prompt Mới';
+        document.getElementById('actionBtnText').textContent = 'Lưu Prompt';
+        document.getElementById('cancelBtn').classList.add('hidden');
+      }
+      
+      cancelEdit() {
+        this.editingIndex = -1;
+        this.resetForm();
+      }
+      
+      editPrompt(id) {
+        const index = this.prompts.findIndex(p => p.id === id);
+        if (index === -1) return;
+        
+        const p = this.prompts[index];
+        document.getElementById('title').value = p.title;
+        document.getElementById('content').value = p.url || p.content;
+        document.getElementById('category').value = p.category;
+        document.getElementById('tags').value = p.tags?.join(', ') || '';
+        
+        this.editingIndex = index;
+        document.getElementById('formTitle').textContent = 'Chỉnh sửa Prompt';
+        document.getElementById('actionBtnText').textContent = 'Cập nhật';
+        document.getElementById('cancelBtn').classList.remove('hidden');
+        
+        // Scroll to form
+        document.querySelector('section:first-child')?.scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      deletePrompt(id, showConfirm = true) {
+        const index = this.prompts.findIndex(p => p.id === id);
+        if (index === -1) return;
+        
+        const deleteAction = () => {
+          this.prompts.splice(index, 1);
+          this.selectedPrompts.delete(id);
+          this.saveToStorage();
+          this.render();
+          this.showToast('🗑️ Đã xoá prompt', 'info');
+        };
+        
+        if (showConfirm) {
+          this.showConfirm('Xoá prompt?', 'Bạn có chắc muốn xoá prompt này? Hành động không thể hoàn tác.', deleteAction);
+        } else {
+          deleteAction();
+        }
+      }
+      
+      copyPrompt(id) {
+        const prompt = this.prompts.find(p => p.id === id);
+        if (!prompt) return;
+        
+        navigator.clipboard.writeText(prompt.content).then(() => {
+          // Update usage count
+          prompt.usageCount = (prompt.usageCount || 0) + 1;
+          this.saveToStorage();
+          
+          this.showToast('📋 Đã sao chép vào clipboard!', 'success');
+          
+          // Visual feedback
+          const btn = event?.target?.closest('button');
+          if (btn) {
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            btn.classList.add('bg-green-500');
+            setTimeout(() => {
+              btn.innerHTML = original;
+              btn.classList.remove('bg-green-500');
+            }, 1500);
+          }
+        }).catch(() => {
+          this.showToast('❌ Không thể sao chép', 'error');
+        });
+      }
+      
+      // ===== BULK OPERATIONS =====
+      toggleSelection(id) {
+        if (this.selectedPrompts.has(id)) {
+          this.selectedPrompts.delete(id);
+        } else {
+          this.selectedPrompts.add(id);
+        }
+        this.render();
+        this.updateBulkActions();
+      }
+      
+      updateBulkActions() {
+        const bulkActions = document.getElementById('bulkActions');
+        const count = this.selectedPrompts.size;
+        
+        if (count > 0) {
+          bulkActions.classList.remove('hidden');
+          document.getElementById('selectedCount').textContent = count;
+        } else {
+          bulkActions.classList.add('hidden');
+        }
+      }
+      
+      copySelected() {
+        const contents = [...this.selectedPrompts]
+          .map(id => this.prompts.find(p => p.id === id)?.content)
+          .filter(Boolean)
+          .join('\n\n---\n\n');
+        
+        if (contents) {
+          navigator.clipboard.writeText(contents).then(() => {
+            this.showToast(`📋 Đã sao chép ${this.selectedPrompts.size} prompt`, 'success');
+            this.clearSelection();
+          });
+        }
+      }
+      
+      deleteSelected() {
+        if (this.selectedPrompts.size === 0) return;
+        
+        this.showConfirm(
+          `Xoá ${this.selectedPrompts.size} prompt?`,
+          'Hành động này không thể hoàn tác. Bạn có chắc muốn tiếp tục?',
+          () => {
+            this.prompts = this.prompts.filter(p => !this.selectedPrompts.has(p.id));
+            this.selectedPrompts.clear();
+            this.saveToStorage();
+            this.render();
+            this.showToast(`🗑️ Đã xoá ${this.prompts.length} prompt`, 'info');
+          }
+        );
+      }
+      
+      clearSelection() {
+        this.selectedPrompts.clear();
+        this.render();
+      }
+      
+      // ===== RENDERING =====
+      render() {
+        const viewMode = document.getElementById('viewMode').value;
+        const search = document.getElementById('search').value.toLowerCase();
+        const categoryFilter = document.getElementById('categoryFilter').value;
+        const sortBy = document.getElementById('sortBy').value;
+        
+        // Filter & Sort
+        let filtered = this.prompts.filter(p => {
+          const matchSearch = !search || 
+            p.title.toLowerCase().includes(search) || 
+            p.content.toLowerCase().includes(search) ||
+            p.category.toLowerCase().includes(search) ||
+            p.tags?.some(t => t.toLowerCase().includes(search));
+          
+          const matchCategory = categoryFilter === 'all' || p.category === categoryFilter;
+          
+          return matchSearch && matchCategory;
+        });
+        
+        // Sort
+        filtered.sort((a, b) => {
+          switch (sortBy) {
+            case 'oldest': return a.createdAt - b.createdAt;
+            case 'az': return a.title.localeCompare(b.title, 'vi');
+            case 'za': return b.title.localeCompare(a.title, 'vi');
+            default: return b.createdAt - a.createdAt; // newest
+          }
+        });
+        
+        // Update category filter dropdown
+        this.updateCategoryFilter(filtered);
+        
+        // Update stats
+        document.getElementById('promptCount').textContent = this.prompts.length;
+        
+        // Empty state
+        const emptyState = document.getElementById('emptyState');
+        const promptList = document.getElementById('promptList');
+        
+        if (filtered.length === 0) {
+          emptyState.classList.remove('hidden');
+          promptList.innerHTML = '';
+          document.getElementById('pagination').innerHTML = '';
+          return;
+        }
+        emptyState.classList.add('hidden');
+        
+        // Render based on view mode
+        switch (viewMode) {
+          case 'grid':
+            this.renderGrid(filtered);
+            break;
+          case 'grouped':
+            this.renderGrouped(filtered);
+            break;
+          default:
+            this.renderList(filtered);
+        }
+        
+        // Update bulk actions visibility
+        this.updateBulkActions();
+      }
+      
+      renderList(prompts) {
+        const promptList = document.getElementById('promptList');
+        const { start, end, totalPages } = this.getPaginationData(prompts.length);
+        const pageItems = prompts.slice(start, end);
+        
+        promptList.innerHTML = pageItems.map(p => this.createPromptCard(p)).join('');
+        this.renderPagination(totalPages);
+      }
+      
+      renderGrouped(prompts) {
+        const promptList = document.getElementById('promptList');
+        const categories = {};
+        
+        prompts.forEach(p => {
+          if (!categories[p.category]) categories[p.category] = [];
+          categories[p.category].push(p);
+        });
+        
+        const categoryKeys = Object.keys(categories).sort((a, b) => a.localeCompare(b, 'vi'));
+        const { start, end, totalPages } = this.getPaginationData(categoryKeys.length);
+        const visibleCategories = categoryKeys.slice(start, end);
+        
+        promptList.innerHTML = visibleCategories.map(cat => `
+          <div class="mb-6">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="category-badge">${cat}</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">${categories[cat].length} prompt</span>
+            </div>
+            <div class="space-y-3">
+              ${categories[cat].map(p => this.createPromptCard(p)).join('')}
+            </div>
+          </div>
+        `).join('');
+        
+        this.renderPagination(totalPages);
+      }
+      
+      renderGrid(prompts) {
+        const promptList = document.getElementById('promptList');
+        const { start, end, totalPages } = this.getPaginationData(prompts.length);
+        const pageItems = prompts.slice(start, end);
+        
+        promptList.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+        promptList.innerHTML = pageItems.map(p => this.createPromptCard(p, true)).join('');
+        this.renderPagination(totalPages);
+      }
+      
+      createPromptCard(p, isGrid = false) {
+        const isSelected = this.selectedPrompts.has(p.id);
+        const contentPreview = p.url 
+          ? `<a href="${p.url}" target="_blank" class="text-primary hover:underline flex items-center gap-1">
+              <i class="fas fa-link"></i> ${p.url.substring(0, 50)}${p.url.length > 50 ? '...' : ''}
+            </a>`
+          : `<p class="text-gray-600 dark:text-gray-300 text-sm line-clamp-3">${p.content}</p>`;
+        
+        return `
+          <div class="prompt-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 relative ${isGrid ? '' : ''}">
+            <!-- Selection Checkbox -->
+            <label class="absolute top-3 right-3 flex items-center">
+              <input type="checkbox" ${isSelected ? 'checked' : ''} 
+                onchange="app.toggleSelection('${p.id}')"
+                class="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary">
+            </label>
+            
+            <!-- Header -->
+            <div class="pr-6 mb-3">
+              <div class="flex items-start justify-between gap-2">
+                <h3 class="font-semibold text-gray-800 dark:text-white line-clamp-1">${p.title}</h3>
+                <span class="category-badge flex-shrink-0">${p.category}</span>
+              </div>
+              ${p.tags?.length ? `
+                <div class="flex flex-wrap gap-1 mt-2">
+                  ${p.tags.map(tag => `<span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">${tag}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+            
+            <!-- Content -->
+            <div class="mb-4">${contentPreview}</div>
+            
+            <!-- Footer -->
+            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+              <span><i class="fas fa-clock"></i> ${this.formatDate(p.updatedAt)}</span>
+              ${p.usageCount > 0 ? `<span><i class="fas fa-copy"></i> ${p.usageCount}</span>` : ''}
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex gap-2">
+              <button onclick="app.copyPrompt('${p.id}')" 
+                class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-1">
+                <i class="fas fa-copy"></i> Sao chép
+              </button>
+              <button onclick="app.editPrompt('${p.id}')" 
+                class="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded-lg transition" title="Chỉnh sửa">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button onclick="app.deletePrompt('${p.id}')" 
+                class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition" title="Xoá">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      
+      getPaginationData(totalItems) {
+        const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+        const start = (this.currentPage - 1) * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+        return { start, end, totalPages };
+      }
+      
+      renderPagination(totalPages) {
+        const pagination = document.getElementById('pagination');
+        if (totalPages <= 1) {
+          pagination.innerHTML = '';
+          return;
+        }
+        
+        let html = '';
+        
+        // Previous
+        html += `<button onclick="app.changePage(${this.currentPage - 1})" 
+          ${this.currentPage === 1 ? 'disabled class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"'}>
+          <i class="fas fa-chevron-left"></i>
+        </button>`;
+        
+        // Pages
+        for (let i = 1; i <= totalPages; i++) {
+          if (i === 1 || i === totalPages || (i >= this.currentPage - 1 && i <= this.currentPage + 1)) {
+            html += `<button onclick="app.changePage(${i})" 
+              class="px-3 py-1.5 rounded-lg font-medium transition ${i === this.currentPage 
+                ? 'bg-primary text-white' 
+                : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 dark:text-gray-200'}">
+              ${i}
+            </button>`;
+          } else if (i === this.currentPage - 2 || i === this.currentPage + 2) {
+            html += `<span class="px-2 text-gray-400">...</span>`;
+          }
+        }
+        
+        // Next
+        html += `<button onclick="app.changePage(${this.currentPage + 1})" 
+          ${this.currentPage === totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"'}>
+          <i class="fas fa-chevron-right"></i>
+        </button>`;
+        
+        pagination.innerHTML = html;
+      }
+      
+      changePage(page) {
+        const totalPages = Math.ceil(this.getFilteredCount() / this.itemsPerPage);
+        if (page < 1 || page > totalPages) return;
+        this.currentPage = page;
+        this.render();
+        // Scroll to top of list
+        document.getElementById('promptList')?.scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      getFilteredCount() {
+        const search = document.getElementById('search').value.toLowerCase();
+        const categoryFilter = document.getElementById('categoryFilter').value;
+        
+        return this.prompts.filter(p => {
+          const matchSearch = !search || 
+            p.title.toLowerCase().includes(search) || 
+            p.content.toLowerCase().includes(search) ||
+            p.category.toLowerCase().includes(search);
+          const matchCategory = categoryFilter === 'all' || p.category === categoryFilter;
+          return matchSearch && matchCategory;
+        }).length;
+      }
+      
+      // ===== CATEGORY MANAGEMENT =====
+      updateCategoryFilter(prompts) {
+        const select = document.getElementById('categoryFilter');
+        const categories = [...new Set(prompts.map(p => p.category))].sort((a, b) => a.localeCompare(b, 'vi'));
+        const current = select.value;
+        
+        select.innerHTML = '<option value="all">🗂️ Tất cả danh mục</option>' +
+          categories.map(cat => `<option value="${cat}">📁 ${cat}</option>`).join('');
+        
+        if (categories.includes(current)) {
+          select.value = current;
+        }
+      }
+      
+      updateCategorySuggestions() {
+        const datalist = document.getElementById('categorySuggestions');
+        const categories = [...new Set(this.prompts.map(p => p.category))].sort();
+        datalist.innerHTML = categories.map(cat => `<option value="${cat}">`).join('');
+      }
+      
+      deleteCategory() {
+        const cat = document.getElementById('deleteCategoryInput')?.value.trim();
+        if (!cat) {
+          this.showToast('⚠️ Vui lòng nhập tên danh mục', 'warning');
+          return;
+        }
+        
+        const count = this.prompts.filter(p => p.category === cat).length;
+        if (count === 0) {
+          this.showToast(`📭 Không tìm thấy prompt trong "${cat}"`, 'info');
+          return;
+        }
+        
+        this.showConfirm(
+          `Xoá danh mục "${cat}"?`,
+          `Sẽ xoá ${count} prompt thuộc danh mục này. Hành động không thể hoàn tác.`,
+          () => {
+            this.prompts = this.prompts.filter(p => p.category !== cat);
+            this.saveToStorage();
+            this.render();
+            this.updateCategorySuggestions();
+            this.showToast(`🗑️ Đã xoá ${count} prompt trong "${cat}"`, 'info');
+          }
+        );
+      }
+      
+      // ===== EXPORT / IMPORT =====
+      exportPrompts() {
+        const data = {
+          version: '2.0',
+          exportedAt: new Date().toISOString(),
+          prompts: this.prompts
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `prompts-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        this.showToast('📥 Đã xuất file JSON', 'success');
+      }
+      
+      importPrompts(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            const imported = Array.isArray(data) ? data : data.prompts;
+            
+            if (!Array.isArray(imported)) {
+              throw new Error('Định dạng không hợp lệ');
+            }
+            
+            // Validate & merge
+            const validPrompts = imported
+              .filter(p => p?.title && p?.content && p?.category)
+              .map(p => ({
+                id: p.id || this.generateId(),
+                title: p.title,
+                content: p.content,
+                category: p.category,
+                url: p.url || null,
+                tags: p.tags || [],
+                createdAt: p.createdAt || Date.now(),
+                updatedAt: p.updatedAt || Date.now(),
+                usageCount: p.usageCount || 0
+              }));
+            
+            // Merge without duplicates (by title+category)
+            const existing = new Set(this.prompts.map(p => `${p.title}|${p.category}`));
+            const newPrompts = validPrompts.filter(p => !existing.has(`${p.title}|${p.category}`));
+            
+            if (newPrompts.length === 0) {
+              this.showToast('⚠️ Không có prompt mới để nhập', 'warning');
+              return;
+            }
+            
+            this.prompts = [...this.prompts, ...newPrompts];
+            this.saveToStorage();
+            this.render();
+            this.updateCategorySuggestions();
+            
+            this.showToast(`✅ Đã nhập ${newPrompts.length} prompt mới`, 'success');
+          } catch (err) {
+            this.showToast(`❌ Lỗi: ${err.message}`, 'error');
+          }
+        };
+        reader.readAsText(file);
+        event.target.value = ''; // Reset input
+      }
+      
+      // ===== UTILITIES =====
+      formatDate(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now - date;
+        
+        if (diff < 60000) return 'Vừa xong';
+        if (diff < 3600000) return `${Math.floor(diff/60000)} phút trước`;
+        if (diff < 86400000) return `${Math.floor(diff/3600000)} giờ trước`;
+        if (diff < 604800000) return `${Math.floor(diff/86400000)} ngày trước`;
+        
+        return date.toLocaleDateString('vi-VN', { 
+          day: '2-digit', month: '2-digit', year: 'numeric' 
+        });
+      }
+      
+      showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const colors = {
+          success: 'bg-green-500',
+          error: 'bg-red-500',
+          warning: 'bg-yellow-500',
+          info: 'bg-blue-500'
+        };
+        const icons = {
+          success: 'fa-check-circle',
+          error: 'fa-exclamation-circle',
+          warning: 'fa-exclamation-triangle',
+          info: 'fa-info-circle'
+        };
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${colors[type]} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3`;
+        toast.innerHTML = `
+          <i class="fas ${icons[type]}"></i>
+          <span class="flex-1 text-sm font-medium">${message}</span>
+          <button onclick="this.parentElement.remove()" class="hover:bg-white/20 p-1 rounded transition">
+            <i class="fas fa-times"></i>
+          </button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto remove
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateX(100%)';
+          setTimeout(() => toast.remove(), 300);
+        }, 4000);
+      }
+      
+      showConfirm(title, message, onConfirm) {
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMessage').textContent = message;
+        document.getElementById('confirmAction').onclick = () => {
+          closeModal('confirmModal');
+          onConfirm();
+        };
+        document.getElementById('confirmModal').classList.remove('hidden');
+      }
+      
+      clearAllData() {
+        this.showConfirm(
+          '⚠️ Xoá toàn bộ dữ liệu?',
+          'Tất cả prompt sẽ bị xoá vĩnh viễn. Bạn có chắc muốn tiếp tục?',
+          () => {
+            localStorage.removeItem('prompts_v2');
+            this.prompts = [];
+            this.selectedPrompts.clear();
+            this.render();
+            this.showToast('🗑️ Đã xoá toàn bộ dữ liệu', 'info');
+          }
+        );
+      }
+      
+      updateStats() {
+        document.getElementById('promptCount').textContent = this.prompts.length;
+      }
+    }
+    
+    // ===== GLOBAL FUNCTIONS =====
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+    
+    // Initialize app
+    const app = new PromptManager();
+    
+    // Expose functions for inline handlers
+    window.app = app;
+    window.closeModal = closeModal;
+  </script>
+</body>
+</html>
