@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Newton Method Quiz</title>
+<style>
+    body{
+        font-family: Arial;
+        background:#f4f6f9;
+        padding:20px;
+    }
+
+    h1{
+        text-align:center;
+        color:#2c3e50;
+    }
+
+    .question-box{
+        background:white;
+        padding:20px;
+        margin:20px 0;
+        border-radius:10px;
+        box-shadow:0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .option{
+        display:block;
+        margin:8px 0;
+        padding:12px;
+        border:1px solid gray;
+        border-radius:8px;
+        cursor:pointer;
+        transition:0.3s;
+    }
+
+    .option:hover{
+        background:#ecf0f1;
+    }
+
+    .correct{
+        background:#2ecc71 !important;
+        color:white;
+    }
+
+    .wrong{
+        background:#e74c3c !important;
+        color:white;
+    }
+
+    .explanation{
+        margin-top:15px;
+        padding:10px;
+        background:#dfe6e9;
+        border-left:5px solid #0984e3;
+        display:none;
+    }
+
+    button{
+        margin-top:20px;
+        padding:12px 20px;
+        font-size:16px;
+        border:none;
+        border-radius:8px;
+        background:#3498db;
+        color:white;
+        cursor:pointer;
+    }
+
+    #score{
+        font-size:24px;
+        text-align:center;
+        color:green;
+        margin-top:30px;
+    }
+</style>
+</head>
+<body>
+
+<h1>Newton Method Quiz (20 Questions)</h1>
+
+<div id="quiz"></div>
+
+<div id="score"></div>
+
+<button onclick="restartQuiz()">Restart Quiz</button>
+
+<script>
+
+const questions = [
+
+{
+q:"1. What is Newton’s Method mainly used for?",
+o:["Finding roots of equations",
+   "Finding matrix determinants",
+   "Sorting arrays",
+   "Calculating integrals"],
+a:0,
+e:"Newton’s Method is an iterative technique used to approximate roots of f(x)=0."
+},
+
+{
+q:"2. Newton’s Method is also called:",
+o:["Euler Method",
+   "Newton-Raphson Method",
+   "Gaussian Method",
+   "Taylor Method"],
+a:1,
+e:"Its full common name is Newton-Raphson Method."
+},
+
+{
+q:"3. General formula of Newton’s Method is:",
+o:["x(n+1)=x(n)-f(x)/f'(x)",
+   "x(n+1)=x(n)+f(x)",
+   "x(n+1)=f'(x)",
+   "x(n+1)=x²"],
+a:0,
+e:"The iterative formula is x(n+1)=x(n)-f(xn)/f'(xn)."
+},
+
+{
+q:"4. What does f'(x) represent?",
+o:["Integral",
+   "Derivative",
+   "Limit",
+   "Root"],
+a:1,
+e:"f'(x) is the derivative of the function."
+},
+
+{
+q:"5. Newton’s Method requires:",
+o:["Only function values",
+   "Derivative values",
+   "Matrix inverse",
+   "Nothing"],
+a:1,
+e:"Need both f(x) and f'(x)."
+},
+
+{
+q:"6. If f'(x)=0, Newton’s Method may:",
+o:["Work faster",
+   "Fail",
+   "Always converge",
+   "Double answer"],
+a:1,
+e:"Division by zero causes failure."
+},
+
+{
+q:"7. Newton’s Method is an example of:",
+o:["Iterative method",
+   "Exact formula",
+   "Sorting method",
+   "Graphing method"],
+a:0,
+e:"It improves approximation step by step."
+},
+
+{
+q:"8. Good initial guess usually leads to:",
+o:["Faster convergence",
+   "Failure always",
+   "Infinite answer",
+   "No change"],
+a:0,
+e:"Closer guess means fewer iterations."
+},
+
+{
+q:"9. Solve x²−4=0 starting x0=3, first iteration?",
+o:["2.17",
+   "1.5",
+   "4",
+   "0"],
+a:0,
+e:"x1 = 3-(9-4)/6 = 2.1667."
+},
+
+{
+q:"10. Root means:",
+o:["Maximum point",
+   "Value where f(x)=0",
+   "Derivative",
+   "Slope"],
+a:1,
+e:"Root is where function crosses x-axis."
+},
+
+{
+q:"11. Newton’s Method uses tangent lines.",
+o:["True",
+   "False",
+   "Sometimes",
+   "Never"],
+a:0,
+e:"It finds next point from tangent intersection."
+},
+
+{
+q:"12. If function is not differentiable, Newton may:",
+o:["Always work",
+   "Fail",
+   "Be exact",
+   "Be linear"],
+a:1,
+e:"Derivative is required."
+},
+
+{
+q:"13. Newton converges fastest when:",
+o:["Near root",
+   "Far away",
+   "Derivative zero",
+   "Random guess"],
+a:0,
+e:"Near root gives quadratic convergence."
+},
+
+{
+q:"14. Convergence order is usually:",
+o:["Linear",
+   "Quadratic",
+   "Cubic",
+   "Zero"],
+a:1,
+e:"Newton has quadratic convergence."
+},
+
+{
+q:"15. Solve f(x)=x³−2 with x0=1, first iteration?",
+o:["1.33",
+   "2",
+   "0",
+   "1"],
+a:0,
+e:"x1 = 1 -(-1)/3 = 1.333."
+},
+
+{
+q:"16. Which is disadvantage?",
+o:["Fast convergence",
+   "Needs derivative",
+   "Simple formula",
+   "Accurate"],
+a:1,
+e:"Derivative calculation can be difficult."
+},
+
+{
+q:"17. Newton may diverge if:",
+o:["Bad starting point",
+   "Good derivative",
+   "Close root",
+   "Simple function"],
+a:0,
+e:"Poor initial guess may diverge."
+},
+
+{
+q:"18. Which field uses Newton’s Method?",
+o:["Engineering",
+   "Computer science",
+   "Physics",
+   "All of them"],
+a:3,
+e:"It is widely used in many fields."
+},
+
+{
+q:"19. Geometrically, next approximation is:",
+o:["x-axis intersection of tangent",
+   "Area under curve",
+   "Maximum value",
+   "Midpoint"],
+a:0,
+e:"Newton uses tangent to hit x-axis."
+},
+
+{
+q:"20. Main goal of Newton’s Method:",
+o:["Approximate equation roots",
+   "Integrate functions",
+   "Sort numbers",
+   "Differentiate"],
+a:0,
+e:"Its purpose is solving nonlinear equations."
+}
+
+];
+
+let score=0;
+
+function loadQuiz(){
+    const quiz=document.getElementById("quiz");
+    quiz.innerHTML="";
+    score=0;
+
+    questions.forEach((q,index)=>{
+
+        let div=document.createElement("div");
+        div.className="question-box";
+
+        let html=`<h3>${q.q}</h3>`;
+
+        q.o.forEach((opt,i)=>{
+            html+=`
+            <div class="option"
+            onclick="checkAnswer(this,${index},${i})">
+            ${opt}
+            </div>`;
+        });
+
+        html+=`
+        <div class="explanation" id="exp${index}">
+        Correct Answer: ${q.o[q.a]} <br><br>
+        ${q.e}
+        </div>`;
+
+        div.innerHTML=html;
+        quiz.appendChild(div);
+    });
+}
+
+function checkAnswer(el,qIndex,selected){
+
+    let parent=el.parentElement;
+    let options=parent.querySelectorAll(".option");
+
+    if(options[0].classList.contains("correct") ||
+       options[0].classList.contains("wrong"))
+       return;
+
+    if(selected===questions[qIndex].a){
+        el.classList.add("correct");
+        score++;
+    }else{
+        el.classList.add("wrong");
+        options[questions[qIndex].a].classList.add("correct");
+    }
+
+    document.getElementById("exp"+qIndex).style.display="block";
+
+    let answered=document.querySelectorAll(".correct,.wrong").length;
+
+    if(answered===questions.length){
+        document.getElementById("score").innerHTML=
+        "Final Score: "+score+" / "+questions.length;
+    }
+}
+
+function restartQuiz(){
+    document.getElementById("score").innerHTML="";
+    loadQuiz();
+}
+
+loadQuiz();
+
+</script>
+</body>
+</html>
