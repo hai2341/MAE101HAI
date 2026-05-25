@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Calculus Mastery Exam | 20 Questions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .exam-header {
+            background: white;
+            border-radius: 20px;
+            padding: 25px 30px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .exam-header h1 {
+            color: #1e3c72;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .exam-header p {
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        .score-board {
+            background: #2a5298;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            background: #e0e0e0;
+            border-radius: 30px;
+            height: 12px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            width: 0%;
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 30px;
+        }
+
+        /* Question Card */
+        .question-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+        }
+
+        .question-card.correct {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border-left: 8px solid #4caf50;
+        }
+
+        .question-card.wrong {
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            border-left: 8px solid #f44336;
+        }
+
+        .question-number {
+            display: inline-block;
+            background: #1e3c72;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 30px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .options {
+            list-style: none;
+            margin-bottom: 15px;
+        }
+
+        .options li {
+            margin: 10px 0;
+            padding: 12px 18px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .options li:hover {
+            background: #e3f2fd;
+            transform: translateX(5px);
+        }
+
+        .options li.selected-correct {
+            background: #4caf50;
+            color: white;
+            border-color: #2e7d32;
+        }
+
+        .options li.selected-wrong {
+            background: #f44336;
+            color: white;
+            border-color: #c62828;
+        }
+
+        .options li.disabled-option {
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .options li.disabled-option:hover {
+            transform: none;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct-feedback {
+            background: #c8e6c9;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+
+        .feedback.wrong-feedback {
+            background: #ffcdd2;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+
+        .answer-explanation {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #ccc;
+            font-size: 0.9em;
+        }
+
+        /* Submit Button */
+        .submit-area {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .submit-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #ff9800, #e65100);
+            margin-left: 15px;
+        }
+
+        /* Result Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 25px;
+            padding: 35px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .close-modal {
+            background: #1e3c72;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="exam-header">
+        <h1>📐 Calculus Mastery Exam</h1>
+        <p>Differential • Integral • Linear Approximation • Newton's Method • MVT • Asymptotes</p>
+        <div class="score-board">
+            ✅ Score: <span id="scoreDisplay">0</span> / <span id="totalQuestions">20</span>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div id="questionsContainer"></div>
+
+    <div class="submit-area">
+        <button class="submit-btn" id="submitBtn">📝 Submit All Answers</button>
+        <button class="submit-btn reset-btn" id="resetBtn">🔄 Reset Exam</button>
+    </div>
+    <footer>
+        Click on any answer to select • Correct: Green | Wrong: Red • Explanation shown after selection
+    </footer>
+</div>
+
+<div class="modal" id="resultModal">
+    <div class="modal-content">
+        <h2>🎉 Exam Results</h2>
+        <div class="score-circle" id="finalScoreCircle">0/20</div>
+        <p id="feedbackMessage"></p>
+        <button class="close-modal" onclick="closeModal()">Close</button>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // 20 UNIQUE QUESTIONS covering:
+    // Differentials, Derivatives, Integrals, Linear Approximation,
+    // Newton's Method, Mean Value Theorem, Asymptotes
+    // ============================================================
+    const questions = [
+        // 1. Differential
+        {
+            text: "What does the differential dx represent in calculus?",
+            options: [
+                "A finite change in x",
+                "An infinitesimally small change in x",
+                "The derivative of x with respect to time",
+                "The integral of x"
+            ],
+            correct: 1,
+            explanation: "dx represents an infinitesimally small change in the variable x. It is the fundamental building block of differential calculus."
+        },
+        // 2. Derivative definition
+        {
+            text: "Which of the following is the correct definition of the derivative f'(x)?",
+            options: [
+                "lim_{h→0} [f(x+h) + f(x)]/h",
+                "lim_{h→0} [f(x+h) - f(x)]/h",
+                "lim_{h→∞} [f(x+h) - f(x)]/h",
+                "∫ f(x) dx"
+            ],
+            correct: 1,
+            explanation: "The derivative is defined as f'(x) = lim_{h→0} [f(x+h) - f(x)]/h, representing the instantaneous rate of change."
+        },
+        // 3. Definite Integral meaning
+        {
+            text: "The definite integral ∫ₐᵇ f(x) dx represents:",
+            options: [
+                "The derivative of f at a point",
+                "The sum of infinitesimal quantities f(x)dx from a to b",
+                "The average value of f'",
+                "The limit of f(x) as x approaches a"
+            ],
+            correct: 1,
+            explanation: "The definite integral is the continuous sum (Riemann sum) of infinitesimal quantities f(x)dx over the interval [a,b]."
+        },
+        // 4. Antiderivative vs Indefinite Integral
+        {
+            text: "What is the relationship between an antiderivative F of f and the indefinite integral?",
+            options: [
+                "∫ f(x)dx = F(x)",
+                "∫ f(x)dx = F(x) + C where C is an arbitrary constant",
+                "∫ f(x)dx = F'(x)",
+                "∫ f(x)dx = f'(x) + C"
+            ],
+            correct: 1,
+            explanation: "The indefinite integral represents the family of all antiderivatives: ∫ f(x)dx = F(x) + C."
+        },
+        // 5. Fundamental Theorem of Calculus
+        {
+            text: "The Fundamental Theorem of Calculus states that if F'(x) = f(x), then:",
+            options: [
+                "∫ₐᵇ f(x)dx = F(a) + F(b)",
+                "∫ₐᵇ f(x)dx = F(b) - F(a)",
+                "∫ₐᵇ f(x)dx = F'(b) - F'(a)",
+                "∫ₐᵇ f(x)dx = f(b) - f(a)"
+            ],
+            correct: 1,
+            explanation: "FTC Part 2: ∫ₐᵇ f(x)dx = F(b) - F(a), where F is an antiderivative of f."
+        },
+        // 6. Linear Approximation formula
+        {
+            text: "The linear approximation (tangent line approximation) of f(x) near x = a is:",
+            options: [
+                "L(x) = f(a) + f(a)(x-a)",
+                "L(x) = f(a) + f'(a)(x-a)",
+                "L(x) = f'(a) + f(a)(x-a)",
+                "L(x) = f(a) - f'(a)(x-a)"
+            ],
+            correct: 1,
+            explanation: "L(x) = f(a) + f'(a)(x-a) is the linear approximation using the tangent line at x = a."
+        },
+        // 7. Newton's Method formula
+        {
+            text: "Newton's method for finding roots of f(x)=0 uses the iteration:",
+            options: [
+                "x_{n+1} = x_n + f(x_n)/f'(x_n)",
+                "x_{n+1} = x_n - f(x_n)/f'(x_n)",
+                "x_{n+1} = f(x_n)/f'(x_n)",
+                "x_{n+1} = x_n - f'(x_n)/f(x_n)"
+            ],
+            correct: 1,
+            explanation: "Newton's method: x_{n+1} = x_n - f(x_n)/f'(x_n). It uses the tangent line to approximate the root."
+        },
+        // 8. Mean Value Theorem
+        {
+            text: "The Mean Value Theorem guarantees the existence of c in (a,b) such that:",
+            options: [
+                "f(c) = (f(a)+f(b))/2",
+                "f'(c) = (f(b)-f(a))/(b-a)",
+                "f'(c) = f(b)-f(a)",
+                "f(c) = f(a)+f(b)"
+            ],
+            correct: 1,
+            explanation: "MVT: f'(c) = (f(b)-f(a))/(b-a). There exists a point where instantaneous rate equals average rate."
+        },
+        // 9. Rolle's Theorem condition
+        {
+            text: "Rolle's Theorem is a special case of the Mean Value Theorem when:",
+            options: [
+                "a = b",
+                "f(a) = f(b)",
+                "f'(a) = f'(b)",
+                "f is constant"
+            ],
+            correct: 1,
+            explanation: "Rolle's Theorem requires f(a)=f(b), which makes the average rate zero, so f'(c)=0."
+        },
+        // 10. Vertical Asymptote
+        {
+            text: "The line x = a is a vertical asymptote of y = f(x) if:",
+            options: [
+                "lim_{x→a} f(x) = L (finite)",
+                "lim_{x→a⁺} f(x) = ±∞ or lim_{x→a⁻} f(x) = ±∞",
+                "lim_{x→∞} f(x) = a",
+                "f(a) is undefined"
+            ],
+            correct: 1,
+            explanation: "A vertical asymptote occurs when the function approaches ±∞ as x approaches a from either side."
+        },
+        // 11. Horizontal Asymptote
+        {
+            text: "The line y = L is a horizontal asymptote if:",
+            options: [
+                "lim_{x→a} f(x) = L",
+                "lim_{x→±∞} f(x) = L",
+                "f'(x) = L for all x",
+                "f(L) = ∞"
+            ],
+            correct: 1,
+            explanation: "Horizontal asymptote: y = L when lim_{x→∞} f(x) = L or lim_{x→-∞} f(x) = L."
+        },
+        // 12. Slant/Oblique Asymptote condition
+        {
+            text: "A function has a slant asymptote y = ax + b (a≠0) when x→∞ if:",
+            options: [
+                "lim_{x→∞} f(x) is finite",
+                "lim_{x→∞} f(x)/x = a (finite, nonzero) and lim_{x→∞} [f(x)-ax] = b",
+                "f(x) is a polynomial of degree 1",
+                "f'(x) is constant"
+            ],
+            correct: 1,
+            explanation: "Slant asymptote exists when degree of numerator is one more than denominator: find a = lim f(x)/x, b = lim (f(x)-ax)."
+        },
+        // 13. Linear approximation example
+        {
+            text: "Using linear approximation, estimate √4.1 given √4 = 2 and f'(4)=1/4.",
+            options: [
+                "2.025",
+                "2.05",
+                "2.1",
+                "2.01"
+            ],
+            correct: 0,
+            explanation: "L(4.1)=f(4)+f'(4)(0.1)=2+0.025=2.025. This is very close to actual √4.1≈2.024845."
+        },
+        // 14. Newton's method example
+        {
+            text: "One Newton iteration for f(x)=x²-2 starting at x₀=1 gives:",
+            options: [
+                "1",
+                "1.5",
+                "2",
+                "1.25"
+            ],
+            correct: 1,
+            explanation: "x₁ = x₀ - f(x₀)/f'(x₀) = 1 - (1-2)/2 = 1 - (-1/2)=1.5. This approximates √2."
+        },
+        // 15. MVT application
+        {
+            text: "If a car travels 120 km in 2 hours, the Mean Value Theorem guarantees:",
+            options: [
+                "The car's speed was exactly 60 km/h at some instant",
+                "The car never exceeded 60 km/h",
+                "The car's speed was constant",
+                "The car's acceleration was zero"
+            ],
+            correct: 0,
+            explanation: "Average speed = 60 km/h, so MVT says at some instant instantaneous speed = 60 km/h."
+        },
+        // 16. Differential vs derivative
+        {
+            text: "If y = f(x), then the differential dy is:",
+            options: [
+                "Δy exactly",
+                "f'(x) dx, an approximation to Δy",
+                "∫ y dx",
+                "The second derivative"
+            ],
+            correct: 1,
+            explanation: "dy = f'(x) dx is the differential, approximating the actual change Δy when dx is small."
+        },
+        // 17. Asymptote identification
+        {
+            text: "Identify the horizontal asymptote of f(x) = (3x²+2)/(x²+1) as x→∞:",
+            options: [
+                "y = 0",
+                "y = 3",
+                "y = 2",
+                "No horizontal asymptote"
+            ],
+            correct: 1,
+            explanation: "Divide numerator and denominator by x²: (3+2/x²)/(1+1/x²) → 3/1 = 3. So y = 3."
+        },
+        // 18. Derivative interpretation
+        {
+            text: "The derivative f'(a) represents:",
+            options: [
+                "The slope of the secant line through (a,f(a)) and (b,f(b))",
+                "The slope of the tangent line at x = a",
+                "The area under the curve from 0 to a",
+                "The average rate of change"
+            ],
+            correct: 1,
+            explanation: "The derivative at a point gives the slope of the tangent line at that point."
+        },
+        // 19. Indefinite integral of power function
+        {
+            text: "∫ x³ dx equals:",
+            options: [
+                "3x² + C",
+                "x⁴/4 + C",
+                "x⁴ + C",
+                "4x⁴ + C"
+            ],
+            correct: 1,
+            explanation: "Using power rule: ∫ xⁿ dx = xⁿ⁺¹/(n+1) + C, so ∫ x³ dx = x⁴/4 + C."
+        },
+        // 20. Slant asymptote example
+        {
+            text: "Find the slant asymptote of f(x) = (x²+1)/(x):",
+            options: [
+                "y = x",
+                "y = x + 1/x",
+                "y = x + 1",
+                "y = x - 1"
+            ],
+            correct: 0,
+            explanation: "Perform division: (x²+1)/x = x + 1/x. As x→∞, 1/x→0, so slant asymptote y = x."
+        }
+    ];
+
+    let userAnswers = new Array(questions.length).fill(null);
+    let answerStatus = new Array(questions.length).fill(null); // 'correct', 'wrong', or null
+    let examSubmitted = false;
+
+    const totalQ = questions.length;
+    document.getElementById('totalQuestions').innerText = totalQ;
+
+    function renderQuestions() {
+        const container = document.getElementById('questionsContainer');
+        container.innerHTML = '';
+        questions.forEach((q, idx) => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            if (answerStatus[idx] === 'correct') card.classList.add('correct');
+            if (answerStatus[idx] === 'wrong') card.classList.add('wrong');
+            
+            card.innerHTML = `
+                <div class="question-number">Question ${idx+1}</div>
+                <div class="question-text">${q.text}</div>
+                <ul class="options" id="options-${idx}">
+                    ${q.options.map((opt, optIdx) => `
+                        <li data-qidx="${idx}" data-optidx="${optIdx}" class="option-item ${userAnswers[idx] === optIdx ? (answerStatus[idx] === 'correct' ? 'selected-correct' : (answerStatus[idx] === 'wrong' ? 'selected-wrong' : '')) : ''}">
+                            ${String.fromCharCode(65+optIdx)}. ${opt}
+                        </li>
+                    `).join('')}
+                </ul>
+                <div class="feedback" id="feedback-${idx}">
+                    <div class="${answerStatus[idx] === 'correct' ? 'correct-feedback' : (answerStatus[idx] === 'wrong' ? 'wrong-feedback' : '')}">
+                        <strong>${answerStatus[idx] === 'correct' ? '✓ Correct!' : (answerStatus[idx] === 'wrong' ? '✗ Incorrect' : '')}</strong>
+                        <div class="answer-explanation">📖 <strong>Explanation:</strong> ${q.explanation}</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+            
+            // Show feedback if answered
+            if (userAnswers[idx] !== null) {
+                const feedbackDiv = document.getElementById(`feedback-${idx}`);
+                feedbackDiv.classList.add('show');
+            }
+            
+            // Add event listeners to options
+            const optionsList = card.querySelectorAll('.option-item');
+            optionsList.forEach(opt => {
+                opt.addEventListener('click', () => handleAnswer(idx, parseInt(opt.dataset.optidx)));
+            });
+        });
+        updateScoreAndProgress();
+    }
+    
+    function handleAnswer(qIdx, selectedIdx) {
+        if (examSubmitted) return;
+        
+        const isCorrect = (selectedIdx === questions[qIdx].correct);
+        userAnswers[qIdx] = selectedIdx;
+        answerStatus[qIdx] = isCorrect ? 'correct' : 'wrong';
+        
+        // Re-render to update UI
+        renderQuestions();
+        
+        // Auto-scroll to keep position smooth
+        const card = document.querySelector(`.question-card`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    function updateScoreAndProgress() {
+        let correctCount = 0;
+        for (let i = 0; i < answerStatus.length; i++) {
+            if (answerStatus[i] === 'correct') correctCount++;
+        }
+        const scoreElem = document.getElementById('scoreDisplay');
+        if (scoreElem) scoreElem.innerText = correctCount;
+        
+        const percent = (correctCount / totalQ) * 100;
+        const progressBar = document.getElementById('progressBar');
+        if (progressBar) progressBar.style.width = percent + '%';
+    }
+    
+    function submitExam() {
+        if (examSubmitted) {
+            alert("Exam already submitted! Click Reset to try again.");
+            return;
+        }
+        
+        let allAnswered = true;
+        for (let i = 0; i < userAnswers.length; i++) {
+            if (userAnswers[i] === null) {
+                allAnswered = false;
+                break;
+            }
+        }
+        
+        if (!allAnswered) {
+            alert(`⚠️ You have ${userAnswers.filter(a => a === null).length} unanswered question(s). Please answer all questions before submitting.`);
+            return;
+        }
+        
+        examSubmitted = true;
+        
+        // Disable all options visually
+        const allOptions = document.querySelectorAll('.option-item');
+        allOptions.forEach(opt => {
+            opt.style.pointerEvents = 'none';
+            opt.classList.add('disabled-option');
+        });
+        
+        // Calculate final score
+        let finalCorrect = answerStatus.filter(s => s === 'correct').length;
+        const finalScoreCircle = document.getElementById('finalScoreCircle');
+        finalScoreCircle.innerText = `${finalCorrect}/${totalQ}`;
+        
+        const percentage = (finalCorrect / totalQ) * 100;
+        let feedbackMsg = "";
+        if (percentage >= 90) feedbackMsg = "🏆 Excellent! You have mastered calculus!";
+        else if (percentage >= 70) feedbackMsg = "🎯 Good job! Keep practicing to reach mastery.";
+        else if (percentage >= 50) feedbackMsg = "📚 Good effort! Review the explanations and try again.";
+        else feedbackMsg = "💪 Don't give up! Review the material and take the exam again.";
+        
+        document.getElementById('feedbackMessage').innerHTML = feedbackMsg + `<br><br>✅ Correct: ${finalCorrect}<br>❌ Wrong: ${totalQ - finalCorrect}`;
+        
+        document.getElementById('resultModal').style.display = 'flex';
+    }
+    
+    function resetExam() {
+        userAnswers = new Array(questions.length).fill(null);
+        answerStatus = new Array(questions.length).fill(null);
+        examSubmitted = false;
+        renderQuestions();
+        
+        // Re-enable clicks
+        const allOptions = document.querySelectorAll('.option-item');
+        allOptions.forEach(opt => {
+            opt.style.pointerEvents = 'auto';
+            opt.classList.remove('disabled-option');
+        });
+        
+        updateScoreAndProgress();
+    }
+    
+    function closeModal() {
+        document.getElementById('resultModal').style.display = 'none';
+    }
+    
+    // Event listeners for buttons
+    document.getElementById('submitBtn').addEventListener('click', submitExam);
+    document.getElementById('resetBtn').addEventListener('click', resetExam);
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('resultModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    // Initial render
+    renderQuestions();
+</script>
+</body>
+</html>
